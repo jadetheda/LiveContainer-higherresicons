@@ -192,7 +192,7 @@ NSMutableSet<ISBundleIcon*>* iconsNeedToGenerateOriginalIcon;
         return [self makeResourceProviderOrignal];
     }
     
-    // to make IconServices generate an app icon, we need ISRecordResourceProvider instead of ISBundleResourceProvider, but it requires a LSApplicationRecord, so we create a fake LSApplicationRecordFake with necessary methods to make it initialize correctly
+    // to make IconServices generate an app icon, we need ISRecordResourceProvider instead of ISBundleResourceProvider, but it requires a LSApplicationRecord, so we create a fake LSApplicationRec[...]
     LSApplicationRecordFake* record = [[LSApplicationRecordFake alloc] initWithBundle:bundle];
     ISRecordResourceProvider* provider = [[PrivClass(ISRecordResourceProvider) alloc] initWithRecord:record options:0];
     
@@ -280,6 +280,10 @@ CGImageRef loadCGImageFromURL(NSURL *url) {
 
 @implementation UIImage(LiveContainer)
 + (instancetype)generateIconForBundleURL:(NSURL*)url style:(GeneratedIconStyle)style hasBorder:(BOOL)hasBorder {
+    return [self generateIconForBundleURL:url style:style hasBorder:hasBorder scale:UIScreen.mainScreen.scale];
+}
+
++ (instancetype)generateIconForBundleURL:(NSURL*)url style:(GeneratedIconStyle)style hasBorder:(BOOL)hasBorder scale:(CGFloat)scale {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         iconsNeedToGenerateOriginalIcon = [NSMutableSet new];
@@ -295,7 +299,7 @@ CGImageRef loadCGImageFromURL(NSURL *url) {
         // stop IFBundle from trying to connect to lsd database
         method_exchangeImplementations(class_getInstanceMethod(PrivClass(IFBundle), @selector(platform)), class_getInstanceMethod(IFBundleFake.class, @selector(platform)));
         // stop LSBundleIcon from trying to connect to lsd database
-        method_exchangeImplementations(class_getInstanceMethod(PrivClass(LSApplicationRecord), @selector(initWithURL:allowPlaceholder:error:)), class_getInstanceMethod(LSApplicationRecordFake.class, @selector(initWithURL:allowPlaceholder:error:)));
+        method_exchangeImplementations(class_getInstanceMethod(PrivClass(LSApplicationRecord), @selector(initWithURL:allowPlaceholder:error:)), class_getInstanceMethod(LSApplicationRecordFake.cla[...]
     });
     
     if(@available(iOS 18.0, *)) {
@@ -313,7 +317,7 @@ CGImageRef loadCGImageFromURL(NSURL *url) {
     
 
     descriptor.ignoreCache = YES;
-    descriptor.scale = UIScreen.mainScreen.scale;
+    descriptor.scale = scale;
     descriptor.variantOptions = 0;
 
     if (@available(iOS 16.0, *)) {
