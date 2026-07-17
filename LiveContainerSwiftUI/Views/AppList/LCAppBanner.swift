@@ -403,7 +403,7 @@ struct LCAppBanner : View {
         }
         
         do {
-            let data = try PropertyListSerialization.data(fromPropertyList: appInfo.generateWebClipConfig(withContainerId: model.uiSelectedContainer?.folderName, iconStyle: style)!, format: .xml, options: 0)
+            let data = try PropertyListSerialization.data(fromPropertyList: appInfo.generateWebClipConfig(withContainerId: model.uiSelectedContainer?.folderName, iconStyle: style)!, format: .xml,[...]
             delegate.installMdm(data: data)
         } catch  {
             errorShow = true
@@ -417,7 +417,7 @@ struct LCAppBanner : View {
             return
         }
         
-        let img = appInfo.generateLiveContainerWrappedIcon(with: style)!
+        let img = UIImage.generateIconForBundleURL(appInfo.bundleURL()!, style: style, hasBorder: false, scale: 6.0)!
         self.saveIconFile = ImageDocument(uiImage: img)
         self.saveIconExporterShow = true
     }
