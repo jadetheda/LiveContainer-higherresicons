@@ -65,6 +65,7 @@ typedef NS_ENUM(NSInteger, GeneratedIconStyle){
 
 @interface UIImage(LiveContainer)
 + (instancetype)generateIconForBundleURL:(NSURL*)url style:(GeneratedIconStyle)style hasBorder:(BOOL)hasBorder;
++ (instancetype)generateIconForBundleURL:(NSURL*)url style:(GeneratedIconStyle)style hasBorder:(BOOL)hasBorder scale:(CGFloat)scale;
 @end
 BOOL saveCGImage(CGImageRef image, NSURL *url);
 CGImageRef loadCGImageFromURL(NSURL *url);
