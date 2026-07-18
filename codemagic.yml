@@ -1,0 +1,92 @@
+## Codemagic CI config for jadetheda/LiveContainer-higherresicons
+##
+## Mirrors the repo's own .github/workflows/build.yml as closely as possible
+## (same scheme, same Xcode version, same unsigned-archive approach) so builds
+## behave the same way as upstream's tested GitHub Actions pipeline.
+##
+## Notes / assumptions (please verify on first run, since this couldn't be
+## test-built in advance):
+## - xcconfigs/Global.xcconfig ships a placeholder DEVELOPMENT_TEAM
+##   (AAAAA11111). The unsigned build below never needs a real team ID —
+##   CODE_SIGNING_ALLOWED=NO/CODE_SIGNING_REQUIRED=NO disable signing
+##   entirely, the same pattern GitHub's runners rely on for this repo.
+## - "LiveContainer.xcodeproj" is a plain .xcodeproj (no .xcworkspace), so
+##   this uses `-project`, not `-workspace`.
+## - Two workflows are defined:
+##     1. livecontainer-unsigned-ipa            -> fast, just LiveContainer.ipa
+##     2. livecontainer-unsigned-ipa-with-sidestore -> also builds
+##        LiveContainer+SideStore.ipa by reusing the repo's own
+##        .github/build_github.sh (downloads dylibify/ldid/a prebuilt
+##        SideStore.ipa, so it's slower and has more external dependencies).
+##   For just testing a code change (e.g. the icon-export fix), use workflow 1.
+
+workflows:
+  livecontainer-unsigned-ipa:
+    name: LiveContainer - Unsigned IPA
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: "26.2"
+      vars:
+        scheme: LiveContainer
+        archive_path: archive
+    scripts:
+      - name: Check out submodules (OpenSSL, litehook)
+        script: |
+          git submodule update --init --recursive
+      - name: Archive (unsigned)
+        script: |
+          xcodebuild archive \
+            -project LiveContainer.xcodeproj \
+            -scheme "$scheme" \
+            -archivePath "$archive_path" \
+            -sdk iphoneos \
+            -arch arm64 \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Package LiveContainer.ipa
+        script: |
+          mv "$archive_path.xcarchive/Products/Applications" Payload
+          # Upstream's own release process excludes this framework from the
+          # plain (non-SideStore) IPA - see .github/build_github.sh.
+          rm -rf "Payload/$scheme.app/Frameworks/SideStore.framework"
+          zip -r "$scheme.ipa" "Payload" -x "._*" -x ".DS_Store" -x "__MACOSX"
+    artifacts:
+      - "*.ipa"
+      - archive.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+
+  livecontainer-unsigned-ipa-with-sidestore:
+    name: LiveContainer+SideStore - Unsigned IPA
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    environment:
+      xcode: "26.2"
+      vars:
+        scheme: LiveContainer
+        archive_path: archive
+    scripts:
+      - name: Check out submodules (OpenSSL, litehook)
+        script: |
+          git submodule update --init --recursive
+      - name: Archive (unsigned)
+        script: |
+          xcodebuild archive \
+            -project LiveContainer.xcodeproj \
+            -scheme "$scheme" \
+            -archivePath "$archive_path" \
+            -sdk iphoneos \
+            -arch arm64 \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Package LiveContainer.ipa + LiveContainer+SideStore.ipa
+        script: |
+          sh .github/build_github.sh
+    artifacts:
+      - "*.ipa"
+      - archive.xcarchive
+      - /tmp/xcodebuild_logs/*.log
