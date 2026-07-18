@@ -228,7 +228,12 @@ uint32_t dyld_get_sdk_version(const struct mach_header* mh);
 }
 
 - (UIImage *)generateLiveContainerWrappedIconWithStyle:(GeneratedIconStyle)style {
-    UIImage* icon = [UIImage generateIconForBundleURL:[NSURL fileURLWithPath:_bundlePath] style:style hasBorder:NO];
+    // Exported icons (Save Icon / Web Clip) should look crisp even though the
+    // on-screen app icon only ever needs to be rendered at native screen scale
+    // (see iconIsDarkIcon: above, which still uses the 3-arg method). Boosting
+    // the scale here is what actually fixes the blurry low-res export.
+    CGFloat exportScale = UIScreen.mainScreen.scale * LCHighResIconScaleMultiplier;
+    UIImage* icon = [UIImage generateIconForBundleURL:[NSURL fileURLWithPath:_bundlePath] style:style hasBorder:NO scale:exportScale];
     if (![NSUserDefaults.standardUserDefaults boolForKey:@"LCFrameShortcutIcons"]) {
         return icon;
     }
