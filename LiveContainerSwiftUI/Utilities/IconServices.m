@@ -280,6 +280,12 @@ CGImageRef loadCGImageFromURL(NSURL *url) {
 
 @implementation UIImage(LiveContainer)
 + (instancetype)generateIconForBundleURL:(NSURL*)url style:(GeneratedIconStyle)style hasBorder:(BOOL)hasBorder {
+    // Preserve existing behavior for on-screen usage (app list/banner icons):
+    // render at the device's native screen scale, e.g. 180x180 @3x.
+    return [self generateIconForBundleURL:url style:style hasBorder:hasBorder scale:UIScreen.mainScreen.scale];
+}
+
++ (instancetype)generateIconForBundleURL:(NSURL*)url style:(GeneratedIconStyle)style hasBorder:(BOOL)hasBorder scale:(CGFloat)scale {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         iconsNeedToGenerateOriginalIcon = [NSMutableSet new];
@@ -313,7 +319,7 @@ CGImageRef loadCGImageFromURL(NSURL *url) {
     
 
     descriptor.ignoreCache = YES;
-    descriptor.scale = UIScreen.mainScreen.scale;
+    descriptor.scale = scale;
     descriptor.variantOptions = 0;
 
     if (@available(iOS 16.0, *)) {
